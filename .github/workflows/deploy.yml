@@ -16,15 +16,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Utilisation de l'action officielle pour éviter les erreurs de "$" et d'écho
-      - name: Login to GitHub Container Registry
+      # Étape 1 : Connexion (zéro ligne de code manuel, pas de $)
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
-        run: |
-          docker build -t ghcr.io/lmv3001/pocmenu:latest .
-          docker push ghcr.io/lmv3001/pocmenu:latest
+      # Étape 2 : Build et Push automatique
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/lmv3001/pocmenu:latest
