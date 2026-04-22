@@ -8,7 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # Indispensable pour autoriser la création du package sur ton compte
     permissions:
       contents: read
       packages: write
@@ -17,16 +16,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Utilisation de l'action officielle pour éviter les erreurs de "$" et d'écho
       - name: Login to GitHub Container Registry
-        # On utilise une variable d'environnement pour éviter les erreurs de format
-        env:
-          MY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "$MY_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push
         run: |
-          # Construction de l'image (le nom doit être en minuscules)
           docker build -t ghcr.io/lmv3001/pocmenu:latest .
-          # Envoi vers le stockage GitHub
           docker push ghcr.io/lmv3001/pocmenu:latest
