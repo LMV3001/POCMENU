@@ -15,5 +15,5 @@ jobs:
       - name: Build and Push
         run: |
           # On force le nom en minuscules ici
-          docker build -t ghcr.io/lmv3001/mon-site:latest .
-          docker push ghcr.io/lmv3001/mon-site:latest
+          docker build -t ghcr.io/lmv3001/pocmenu:latest .
+          docker push ghcr.io/lmv3001/pocmenu:latest
