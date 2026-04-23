@@ -3,8 +3,7 @@ const canvas = document.getElementById("scene");
 const ctx = canvas.getContext("2d");
 
 // Parametres de la grille hexagonale.
-// On garde x lignes fixes, puis on calcule automatiquement le nombre de colonnes.
-const NOMBRE_LIGNES = 30;
+const TAILLE_GRILLE_VP = 1.0; // Taille
 const DECALAGE_GAUCHE = -20;
 const DECALAGE_HAUTEUR = -20;
 const CHEVAUCHEMENT_X = 0.6; // évite les fentes visuelles dues au rendu sous-pixel des SVG.
@@ -19,6 +18,8 @@ const AMPLITUDE_ALEA = 0.3; // amplitude de l'alea de placement des delais de de
 const ECHELLE_TAILLE_HEXAGONES = 1;// Taille de l'hexagone à la création 1 = taille normale, <1 = hexagones plus petits, >1 = hexagones plus grands.
 const TAUX_HEXAGONES_TRANSPARENTS = 0.0;
 const TAUX_REDUCTION_HEXAGONES_ANIMATION = 0; // 0.75 = 75% de reduction (taille finale = 25%).
+const TAUX_HEXAGONES_DISPARITION = 0.99; // Proportion d'hexagones qui disparaissent complètement pendant l'animation.
+const LIGNE_FIN_ANIMATION = 2; // Ligne virtuelle vers laquelle les hexagones convergent (1 = ligne 1, 2 = ligne 2, etc.). Permet de faire converger vers une ligne plus haute que la ligne 1 pour un effet plus dynamique.
 const COULEUR_HEXAGONES = "#3498db";
 const COULEUR_BORD_HEXAGONES = "#2980b9";
 const COULEUR_FINAL_HEXAGONES = "#2ecc71";
@@ -118,7 +119,9 @@ function calculerLayout() {
   const largeur = (Math.sqrt(3) / 2) * hauteur;
   const pasX = largeur - CHEVAUCHEMENT_X;
   const pasY = (3 * hauteur) / 4 - CHEVAUCHEMENT_Y;
-  const nombreColonnes = Math.ceil((window.innerWidth - DECALAGE_GAUCHE) / pasX);
+  // Calcul dynamique du nombre de lignes pour couvrir tout le viewport
+  const nombreLignes = Math.ceil((window.innerHeight*TAILLE_GRILLE_VP - DECALAGE_HAUTEUR) / pasY) + 2; // +2 pour éviter les bords vides
+  const nombreColonnes = Math.ceil((window.innerWidth*TAILLE_GRILLE_VP - DECALAGE_GAUCHE) / pasX);
 
   return {
     hauteur,
@@ -126,12 +129,13 @@ function calculerLayout() {
     pasX,
     pasY,
     nombreColonnes,
-    nombreHexagones: nombreColonnes * NOMBRE_LIGNES,
+    nombreLignes,
+    nombreHexagones: nombreColonnes * nombreLignes,
     rayon: hauteur / 2,
   };
 }
 
-// Cree un masque booleen qui marque exactement ~30% des hexagones en transparent.
+// Cree un masque booleen qui marque exactement x% des hexagones en transparent.
 function genererMasqueHexagonesTransparents(nombre, tauxTransparent) {
   const masque = new Array(nombre).fill(false);
   const indices = Array.from({ length: nombre }, (_, i) => i);
@@ -159,10 +163,22 @@ function initialiserHexagones() {
   hexagones = new Array(layout.nombreHexagones);
   const masqueTransparents = genererMasqueHexagonesTransparents(layout.nombreHexagones, TAUX_HEXAGONES_TRANSPARENTS);
 
+  // Sélectionne aléatoirement un pourcentage d'hexagones à faire disparaître
+  const indices = Array.from({ length: layout.nombreHexagones }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const nombreADisparaitre = Math.floor(layout.nombreHexagones * TAUX_HEXAGONES_DISPARITION);
+  const masqueDisparaitre = new Array(layout.nombreHexagones).fill(false);
+  for (let i = 0; i < nombreADisparaitre; i++) {
+    masqueDisparaitre[indices[i]] = true;
+  }
+
   for (let i = 0; i < layout.nombreHexagones; i++) {
     // Index -> (ligne, colonne) pour remplir la grille.
-    const ligne = i % NOMBRE_LIGNES;
-    const colonne = Math.floor(i / NOMBRE_LIGNES);
+    const ligne = i % layout.nombreLignes;
+    const colonne = Math.floor(i / layout.nombreLignes);
     // Une ligne sur deux est decalee d'une demi-largeur (motif nid d'abeille).
     const decalageLigneX = (ligne % 2) * (layout.largeur / 2);
 
@@ -175,13 +191,14 @@ function initialiserHexagones() {
       // Centre de l'hexagone: point de reference pour le dessin canvas.
       centerX: left + layout.largeur / 2,
       centerY: top + layout.hauteur / 2,
-      // Les lignes 2/3/4 remontent progressivement vers la ligne 1.
-      remonteeMax: ligne * layout.pasY,
+      // Les lignes remontent progressivement vers la ligne X.
+      remonteeMax: (ligne - LIGNE_FIN_ANIMATION) * layout.pasY,
       // Distance horizontale a parcourir jusqu'au bord droit.
       distanceBordDroit: window.innerWidth - left - layout.largeur - DISTANCE_BORD_DROIT,
       // Aleatoire fixe (une seule fois) pour casser le cote trop mecanique.
       alea: (Math.random() - 0.5) * 2,
       estTransparent: masqueTransparents[i],
+      doitDisparaitre: masqueDisparaitre[i],
     };
   }
 
@@ -283,7 +300,12 @@ function renderFromScroll() {
 
     // Transformation 4: reduction de taille (rapide au debut, plus douce ensuite).
     const progressionEaseOut = 1 - Math.pow(1 - progression, 2);
-    const echelle = clamp(1 - progressionEaseOut * TAUX_REDUCTION_HEXAGONES_ANIMATION, 0.05, 1);
+    let echelle = clamp(1 - progressionEaseOut * TAUX_REDUCTION_HEXAGONES_ANIMATION, 0.05, 1);
+    // Si l'hexagone doit disparaître, on anime jusqu'à 0
+    if (hex.doitDisparaitre) {
+      echelle = 1 - progressionEaseOut;
+      if (echelle < 0.01) echelle = 0.01; // évite bug canvas
+    }
     // Transition de couleur volontairement accentuée pour etre visible tres vite.
     const progressionCouleur = clamp(progressionEaseOut * 1.4, 0, 1);
     let couleurFond = rgbVersCss(
@@ -370,11 +392,18 @@ function initialiser() {
 // Au scroll: demande un rendu (throttle via requestAnimationFrame).
 window.addEventListener("scroll", scheduleRender, { passive: true });
 
+// Au resize: recalcule la grille, la timeline et redessine.
+// Correction pour téléphones: resize intempestif au scroll(barre d'adresse), on recalcule d'abord les distances puis la timeline pour que les deux soient cohérents.
+
+let lastWidth = window.innerWidth;
 window.addEventListener("resize", () => {
-  // Au resize: tout depend de la taille ecran, on recalcule puis on redessine.
-  resizeCanvas();
-  initialiserHexagones();
-  renderFromScroll();
+  // Au resize: tout depend de la taille ecran, on recalcule uniquement si le window.width a changé puis on redessine.
+  if (window.innerWidth !== lastWidth) {
+    lastWidth = window.innerWidth;
+    resizeCanvas();
+    initialiserHexagones();
+    renderFromScroll();
+  }
 });
 
 
