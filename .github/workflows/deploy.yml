@@ -1,4 +1,4 @@
-name: Build and Push Image
+name: Build and Push Vite App
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     permissions:
       contents: read
       packages: write
@@ -16,7 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Étape de connexion : gérée par l'action officielle (pas de script run)
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -24,10 +22,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Étape de Build et Push : gérée par l'action officielle (pas de script run)
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/lmv3001/pocmenu:latest
+          # On garde le même nom pour que le serveur suive sans rien changer
+          tags: ghcr.io/${{ github.repository_owner }}/pocmenu:latest
