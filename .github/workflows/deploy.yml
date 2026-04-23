@@ -28,4 +28,4 @@ jobs:
           context: .
           push: true
           # On garde le même nom pour que le serveur suive sans rien changer
-          tags: ghcr.io/${{ github.repository_owner }}/pocmenu:latest
+          tags: ghcr.io/lmv3001/pocmenu:latest
