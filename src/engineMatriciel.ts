@@ -27,18 +27,17 @@ export class Engine3D {
     this.zMoyen = new Float32Array(geometrie.length / 12); // 1 composante (profondeur) par sommet
     this.position3DSorted = new Float32Array(geometrie.length); // 4 composantes (x, y, z, w) par sommet après tri par profondeur
     this.position2D = new Float32Array(geometrie.length / 2); // 2 composantes (x, y) par sommet pour les positions projetées
-    this.normales = new Float32Array(geometrie.length / 12 * 3); // 3 composantes (x, y, z) par sommet pour les normales
-    this.couleur = new Float32Array(geometrie.length / 12); // 3 composantes (h, s, l) par sommet
-    this.couleurUpdated = new Float32Array(geometrie.length / 12); // 3 composantes (h, s, l) par sommet pour les couleurs après transformation
+    this.normales = new Float32Array(geometrie.length / 4); // 3 composantes (x, y, z) par sommet pour les normales
+    this.couleurSphere = [0, 100, 50]; // couleur de base de la sphère en format HSL pour une gestion plus réaliste de la lumière et des ombres
+    this.couleur = new Float32Array(geometrie.length / 4); // 3 composantes (h, s, l) par sommet
+    this.couleurUpdated = new Float32Array(geometrie.length / 4); // 3 composantes (h, s, l) par sommet pour les couleurs après transformation
     //this.keyframes = new Float32Array(nbKeyframesTotal * 11); // 11 composantes par keyframe
-
-    for ( let i = 0; i < this.geometrie.length; i +=48) {
-    let indiceInstance = i/48*6;
-    const matriceTranslation = MATH3D.creerMatriceTranslation(this.instances[indiceInstance], this.instances[indiceInstance + 1], this.instances[indiceInstance + 2]);
-    this.position3D.set(MATH3D.transformerPoints(this.geometrie.subarray(i, i+48), matriceTranslation), i);
+   
+    for (let i = 0; i < this.couleur.length; i += 3) {
+      this.couleur[i] = this.couleurSphere[0]; // h
+      this.couleur[i + 1] = this.couleurSphere[1]; // s
+      this.couleur[i + 2] = this.couleurSphere[2]; // l
     }
-
-    console.log("position3D", this.position3D);
   }
 
   public update(canvasWidth: number, canvasHeight: number, scroll: number, camera: Float32Array, lumiere: Light) {
@@ -47,11 +46,16 @@ export class Engine3D {
  for ( let i = 0; i < this.geometrie.length; i +=48) {
   let indiceInstance = i/48*6;
   const keyframe1 = [0, 100, 0, 0, 0, 0, 0, 0];
-  const keyframe2 = [500, 100,this.instances[indiceInstance]*2, this.instances[indiceInstance + 1]*2, this.instances[indiceInstance + 2]*2, 0, 0, 0, 0];
+  const keyframe2 = [1000, 100,0, 0, 0, Math.PI*2, Math.PI*2, Math.PI*2];
   
   const ratio = Math.max(Math.min((scroll - keyframe1[0])/(keyframe2[0] - keyframe1[0]), 1), 0); // on suppose que les keyframes sont triées par ordre de scroll
   
-  const scale = keyframe1[1]/100 + ratio * (keyframe2[1] - keyframe1[1])/100;;
+  const scale = keyframe1[1]/100 + ratio * (keyframe2[1] - keyframe1[1])/100;
+ const indiceDexplosion = (1 + ratio)
+ const matriceTranslationLocale = MATH3D.creerMatriceTranslation(this.instances[indiceInstance]*(indiceDexplosion), this.instances[indiceInstance + 1]*(1+ratio), this.instances[indiceInstance + 2]*(1+ratio));
+ this.position3D.set(MATH3D.transformerPoints(this.geometrie.subarray(i, i+48), matriceTranslationLocale), i);
+
+
  
   const translationX = keyframe1[2] + ratio * (keyframe2[2] - keyframe1[2]);
   const translationY = keyframe1[3] + ratio * (keyframe2[3] - keyframe1[3]);
@@ -105,9 +109,8 @@ export class Engine3D {
   
   this.position3DUptated.set(MATH3D.transformerPoints(this.position3D.subarray(i, i+48), matriceMVP), i);
 
- // modifcation les matrices view et projection ne doivent pas être recalculées pour chaque figure, elles doivent être calculées une seule fois par frame en fonction de la position de la caméra et des paramètres de projection, puis utilisées pour transformer les points de toutes les figures, à faire évoluer vers une gestion plus efficace des transformations pour un rendu plus rapide et plus fluide
- }
-
+ // modifcation les matrices view et projection ne doivent pas être recalculées pour chaque figure, elles doivent être calculées une seule fois par frame en fonction de la position de la caméra et des paramètres de projection, puis utilisées pour transformer les points de toutes les figures, à faire évoluer vers une gestion plus efficace des transformations pour un rendu plus rapide et plus fluide; // on suppose que la couleur est la même pour tous les sommets de la figure, à faire évoluer vers une gestion plus réaliste de la couleur pour un rendu plus réaliste
+}
  this.ordreAffichage = [];
 
   MATH3D.calculerNormales(this.position3DUptated, this.normales); // on calcule les normales des sommets pour une gestion plus réaliste de la lumière et des ombres
@@ -124,12 +127,13 @@ export class Engine3D {
   const intensitéLumière = new Float32Array(this.normales.length / 3); // 1 composante (intensité) par sommet pour l'éclairage
 
   MATH3D.calculerEclairage(this.normales, lumiere, intensitéLumière);// on calcule la couleur des sommets en fonction de la lumière pour un rendu plus réaliste
- 
+
   MATH3D.calculerCouleur(this.couleur, intensitéLumière, this.couleurUpdated); 
   
   // on calcule la couleur des sommets en fonction de la lumière pour un rendu plus réaliste
   
   MATH3D.projeterPoints(this.position3DUptated, canvasWidth, canvasHeight, this.position2D); 
+  
   
 }
 

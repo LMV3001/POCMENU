@@ -5,7 +5,7 @@ export class Light {
     public readonly ambientLight: number;
     public readonly intensity: number;
 
-    constructor(position: Position = new Position(0, 0, 0), intensity: number = 1, ambientLight: number = 0.1) {
+    constructor(position: Position = new Position(1, 1, -0.5), intensity: number = 1, ambientLight: number = 0.3) {
         this.position = position;
         this.intensity = intensity;
         this.ambientLight = ambientLight;

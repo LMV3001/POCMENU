@@ -48,31 +48,49 @@ function genererDataIcosphereLvl3() {
     const sommetsLocauxData = [];
 
     for (let i = 0; i < faces.length; i++) {
-        const A = sommets[faces[i][0]];
-        const B = sommets[faces[i][1]];
-        const C = sommets[faces[i][2]];
+const A = sommets[faces[i][0]];
+const B = sommets[faces[i][1]];
+const C = sommets[faces[i][2]];
 
-        const centreX = (A[0] + B[0] + C[0]) / 4;
-        const centreY = (A[1] + B[1] + C[1]) / 4;
-        const centreZ = (A[2] + B[2] + C[2]) / 4;
+// 1. On calcule le centre du triangle de surface
+const milieuFaceX = (A[0] + B[0] + C[0]) / 3;
+const milieuFaceY = (A[1] + B[1] + C[1]) / 3;
+const milieuFaceZ = (A[2] + B[2] + C[2]) / 3;
 
-        // On push les 6 datas de l'instance
-        instancesData.push(centreX, centreY, centreZ, 0, 0, 0);
+// 2. LE CURSEUR DE GÉOMÉTRIE :
+// 0.0 = La pyramide est maximale (l'apex touche le centre 0,0,0)
+// 1.0 = La pyramide est plate (l'apex disparaît sur la surface)
+// 0.5 = La pyramide fait exactement la moitié du rayon. L'apex est préservé !
+const facteurHauteur = 0.7; 
 
-        const locA = [A[0] - centreX, A[1] - centreY, A[2] - centreZ];
-        const locB = [B[0] - centreX, B[1] - centreY, B[2] - centreZ];
-        const locC = [C[0] - centreX, C[1] - centreY, C[2] - centreZ];
-        const locO = [-centreX, -centreY, -centreZ];
+const O = [
+    milieuFaceX * facteurHauteur,
+    milieuFaceY * facteurHauteur,
+    milieuFaceZ * facteurHauteur
+];
 
-        const points = [
-            ...locA, 1.0, ...locB, 1.0, ...locC, 1.0,
-            ...locA, 1.0, ...locO, 1.0, ...locB, 1.0,
-            ...locB, 1.0, ...locO, 1.0, ...locC, 1.0,
-            ...locC, 1.0, ...locO, 1.0, ...locA, 1.0
-        ];
+// 3. Calcul du nouveau centre de gravité (barycentre de la pyramide courte)
+const centreX = (A[0] + B[0] + C[0] + O[0]) / 4;
+const centreY = (A[1] + B[1] + C[1] + O[1]) / 4;
+const centreZ = (A[2] + B[2] + C[2] + O[2]) / 4;
 
-        // On push les 48 datas de la géométrie locale
-        sommetsLocauxData.push(...points);
+// 4. Stockage de la position de l'instance pour le moteur
+instancesData.push(centreX, centreY, centreZ);
+
+// 5. Passage en coordonnées locales par rapport à ce nouveau centre
+const locA = [A[0] - centreX, A[1] - centreY, A[2] - centreZ];
+const locB = [B[0] - centreX, B[1] - centreY, B[2] - centreZ];
+const locC = [C[0] - centreX, C[1] - centreY, C[2] - centreZ];
+const locO = [O[0] - centreX, O[1] - centreY, O[2] - centreZ];
+
+const points = [
+    ...locA, 1.0, ...locB, 1.0, ...locC, 1.0, // Face extérieure
+    ...locA, 1.0, ...locO, 1.0, ...locB, 1.0, // Face interne 1
+    ...locB, 1.0, ...locO, 1.0, ...locC, 1.0, // Face interne 2
+    ...locC, 1.0, ...locO, 1.0, ...locA, 1.0  // Face interne 3
+];
+
+sommetsLocauxData.push(...points);
     }
 
     return {

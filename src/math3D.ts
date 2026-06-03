@@ -317,7 +317,7 @@ export function calculerCouleur(couleur: Float32Array, intensitéLumière: Float
   for (let i = 0; i < couleur.length; i += 3) {
     couleurUpdated[i] = couleur[i]; // on applique l'intensité de la lumière à la couleur de base pour obtenir la couleur finale, en s'assurant que les valeurs restent entre 0 et 1
     couleurUpdated[i + 1] = couleur[i + 1];
-    couleurUpdated[i + 2] = intensitéLumière[i / 3];
+    couleurUpdated[i + 2] = intensitéLumière[i / 3] * 50; // on applique l'intensité de la lumière à la composante de luminosité (L) de la couleur HSL pour obtenir la couleur finale, en s'assurant que les valeurs restent entre 0 et 1
   }
 }
 

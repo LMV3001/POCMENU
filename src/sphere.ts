@@ -18,8 +18,17 @@ export class Sphere {
         // On assigne la géométrie
         this.geometrie = new Float32Array(data.geometrie);
         
-        this.instances = new Float32Array(data.instances);
-        
+        this.instances = new Float32Array(data.instances.length * 2); // on suppose que les instances sont stockées sous forme de tableaux de positions (x, y, z) et de rotations (rx, ry, rz) pour chaque instance, soit 6 valeurs par instance
+        let indexJson = 0;
+        for (let i = 0; i < this.instances.length; i += 6) {
+            this.instances[i] = data.instances[indexJson]; // x
+            this.instances[i + 1] = data.instances[indexJson + 1]; // y
+            this.instances[i + 2] = data.instances[indexJson + 2]; // z
+            this.instances[i + 3] = 0; // rotation x
+            this.instances[i + 4] = 0; // rotation y
+            this.instances[i + 5] = 0; // rotation z
+            indexJson += 3;
+        }
         this.estChargee = true;
     }
 }

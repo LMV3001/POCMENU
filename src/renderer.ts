@@ -23,8 +23,8 @@ private readonly ctx: CanvasRenderingContext2D;
     ctx.lineTo(position[indexDebut + 4], position[indexDebut + 5]); // Point droit du triangle base avant
     
   
-    //ctx.fillStyle = `hsl(${couleur[index * 3]}, ${couleur[index * 3 + 1]}%, ${couleur[index * 3 + 2]}%)`; // Couleur du triangle
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = `hsl(${couleur[index * 3]}, ${couleur[index * 3 + 1]}%, ${couleur[index * 3 + 2]}%)`; // Couleur du triangle
+    //ctx.fillStyle = 'red';
     ctx.strokeStyle = 'black'; // Couleur du contour du triangle
     
     ctx.closePath();
