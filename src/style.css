@@ -1,8 +1,9 @@
+
 html,
 body {
   margin: 0;
   padding: 0;
-  min-height: 600dvh;
+  min-height: 200dvh;
   background: #f5f7fb;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -20,3 +21,58 @@ html::-webkit-scrollbar {
   /* pointer-events: none; dfqs d*/
   display: block;
 }
+
+
+#camera-controls.cross-grid {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  grid-template-areas:
+    ".    up    ."
+    "left center right"
+    ".   down   .";
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  justify-items: center;
+  align-items: center;
+  gap: 5px;
+}
+
+#camera-controls .up    { grid-area: up; }
+#camera-controls .down  { grid-area: down; }
+#camera-controls .left  { grid-area: left; }
+#camera-controls .right { grid-area: right; }
+#camera-controls .center{ grid-area: center; }
+
+#zoom-controls {
+  position: fixed;
+  width: 30px;
+  height: 100px;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  grid-template-areas:
+    "up"
+    "center"
+    "down";
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  align-items: center;
+}
+
+#zoom-controls .up    { grid-area: up; }
+#zoom-controls .down  { grid-area: down; }
+#zoom-controls .center{ grid-area: center; }
+
+button {
+  position : relative;
+  width: 30px;
+  height: 30px;
+
+}
+
+
